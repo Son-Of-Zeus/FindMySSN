@@ -18,15 +18,7 @@ class _ClaimItemPageState extends State<ClaimItemPage> {
   final _answerController = TextEditingController();
   bool _isLoading = false;
 
-  /// Submits the claim for the item.
-  ///
-  /// This function performs the following steps:
-  /// 1. Fetches the full item record to get the private answer and finder's ID.
-  /// 2. Compares the user's provided answer with the correct answer.
-  /// 3. If correct, it fetches the finder's user record for their contact details.
-  /// 4. Updates the item's status to "claimed".
-  /// 5. Navigates to the ClaimSuccessPage with all the necessary details.
-  /// 6. If incorrect, it shows a SnackBar error message.
+  
   Future<void> _submitClaim() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
