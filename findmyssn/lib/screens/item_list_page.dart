@@ -13,6 +13,7 @@ class ItemListPage extends StatefulWidget {
 }
 
 class _ItemListPageState extends State<ItemListPage> {
+  String? _selectedLocationFilter;
   List<RecordModel> _items = [];
   bool _isLoading = true;
   final pb = PocketBaseService.pb;
@@ -29,13 +30,60 @@ class _ItemListPageState extends State<ItemListPage> {
     });
   }
 
+  Future<void> _showLocationFilterDialog(BuildContext context) async {
+    try {
+      // Fetch all unique clusterIds from the bssid_location_map
+      final records = await pb.collection('bssid_location_map').getFullList();
+      final locations = records.map((r) => r.data['clusterId'].toString()).toSet().toList();
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Filter by Location"),
+            content: Container(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: locations.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(locations[index]),
+                    onTap: () {
+                      setState(() {
+                        _selectedLocationFilter = locations[index];
+                        _fetchItems(); // Re-fetch with the new filter
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print("Error fetching locations for filter: $e");
+      // Handle error, maybe show a dialog
+    }
+  }
+
   /// Fetches the list of items that are ready for claim.
   Future<void> _fetchItems() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      // Start with the base filter for status
+      String filter = 'status="ready_for_claim"';
+
+      // If a location is selected, add it to the filter string
+      if (_selectedLocationFilter != null) {
+        filter += ' && clusterId="${_selectedLocationFilter!}"';
+      }
+
       final resultList = await pb.collection('items').getList(
-        filter: 'status="ready_for_claim"',
+        filter: filter,
         sort: '-created',
       );
       if (mounted) {
@@ -57,6 +105,25 @@ class _ItemListPageState extends State<ItemListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Reported Items"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            tooltip: "Filter by Location",
+            onPressed: () => _showLocationFilterDialog(context),
+          ),
+          // Add a button to clear the filter if one is active
+          if (_selectedLocationFilter != null)
+            IconButton(
+              icon: const Icon(Icons.filter_list_off),
+              tooltip: "Clear Filter",
+              onPressed: () {
+                setState(() {
+                  _selectedLocationFilter = null;
+                  _fetchItems(); // Re-fetch with no filter
+                });
+              },
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
