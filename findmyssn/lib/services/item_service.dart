@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:findmyssn/services/pocketbase_service.dart';
 
 class ItemService {
-  static const _geminiApiKey = 'AIzaSyAmCtumbAVVUJD3rq59ptosZJgfaPNFaho';
+  static const _geminiApiKey = '';
 
   Future<void> reportItem({
     required String title,
